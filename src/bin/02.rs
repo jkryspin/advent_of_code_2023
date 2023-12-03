@@ -6,40 +6,48 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut sum = 0;
     let re: Regex = Regex::new(r"\d+").unwrap();
     let cubed: Regex = Regex::new(r"\d+ \w+").unwrap();
-    lines.for_each(|l|{
+    lines.for_each(|l| {
         let (cubes, game_id) = parse(l, &re, &cubed);
         if is_valid_(&cubes) {
-            sum+= game_id;
+            sum += game_id;
         }
     });
 
     Some(sum)
 }
 
-fn parse(l:&str, re:&Regex, cubed:&Regex) -> (Vec<Vec<CubeSet>>, u32) {
+fn parse(l: &str, re: &Regex, cubed: &Regex) -> (Vec<Vec<CubeSet>>, u32) {
     let mut games = l.split(";");
     let id_str = games.clone().next().unwrap();
     let game_id = re.find(id_str).unwrap().as_str().parse::<u32>().unwrap();
-    let cubes: Vec<_> = games.map(|g|{
-        return cubed.find_iter(g).map(|m|{
-            let mut split_m = m.as_str().split(" ");
-            let amount = split_m.next().unwrap();
-            let color = split_m.next().unwrap();
-            return CubeSet{ amount: amount.parse().unwrap(), color: color.to_string() };
-        }).collect::<Vec<CubeSet>>()
-    }).collect();
+    let cubes: Vec<_> = games
+        .map(|g| {
+            return cubed
+                .find_iter(g)
+                .map(|m| {
+                    let mut split_m = m.as_str().split(" ");
+                    let amount = split_m.next().unwrap();
+                    let color = split_m.next().unwrap();
+                    return CubeSet {
+                        amount: amount.parse().unwrap(),
+                        color: color.to_string(),
+                    };
+                })
+                .collect::<Vec<CubeSet>>();
+        })
+        .collect();
     return (cubes, game_id);
 }
 fn is_valid_(cubes: &Vec<Vec<CubeSet>>) -> bool {
     for c in cubes.iter() {
         for cube in c.iter() {
-            if cube.color == "red" && cube.amount >12{
+            if cube.color == "red" && cube.amount > 12 {
                 return false;
             }
-            if cube.color == "green" && cube.amount >13 {
+            if cube.color == "green" && cube.amount > 13 {
                 return false;
             }
-            if cube.color == "blue" && cube.amount >14 {
+            if cube.color == "blue" && cube.amount > 14 {
                 return false;
             }
         }
@@ -47,19 +55,18 @@ fn is_valid_(cubes: &Vec<Vec<CubeSet>>) -> bool {
     return true;
 }
 #[derive(Debug)]
-struct CubeSet{
+struct CubeSet {
     amount: u32,
-    color: String
+    color: String,
 }
 
-// Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green
 pub fn part_two(input: &str) -> Option<u32> {
     let lines = input.lines();
     let re = Regex::new(r"\d+").unwrap();
     let cubed = Regex::new(r"\d+ \w+").unwrap();
     let mut sum = 0;
-    lines.for_each(|l|{
-        let (cubes,_) = parse(l, &re, &cubed);
+    lines.for_each(|l| {
+        let (cubes, _) = parse(l, &re, &cubed);
         sum += min_power(&cubes);
     });
 
@@ -72,20 +79,19 @@ fn min_power(cubes: &Vec<Vec<CubeSet>>) -> u32 {
     let mut min_blue = 1;
     for c in cubes.iter() {
         for cube in c.iter() {
-            if cube.color == "red"{
+            if cube.color == "red" {
                 min_red = min_red.max(cube.amount);
             }
-            if cube.color == "green"{
-                min_green= min_green.max(cube.amount);
+            if cube.color == "green" {
+                min_green = min_green.max(cube.amount);
             }
             if cube.color == "blue" {
-                min_blue= min_blue.max(cube.amount);
+                min_blue = min_blue.max(cube.amount);
             }
         }
     }
     return min_red * min_blue * min_green;
 }
-
 
 #[cfg(test)]
 mod tests {
