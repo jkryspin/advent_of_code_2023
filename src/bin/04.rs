@@ -6,15 +6,15 @@ pub fn part_one(input: &str) -> Option<u64> {
     //Card   1: 44 22 11 15 37 50  3 90 60 34 | 35 60 76  3 21 84 45 52 15 72 13 31 90  6 37 44 34 53 68 22 50 38 67 11 55
     let lines = input.lines();
     let mut total = 0;
-    lines.for_each(|l|{
-        let (id, winning_numbers, my_numbers) =parse(l);
+    lines.for_each(|l| {
+        let (id, winning_numbers, my_numbers) = parse(l);
         let win_hash = HashSet::<u64>::from_iter(winning_numbers);
-        let mut sum =0;
-        my_numbers.iter().for_each(|n|{
-            if win_hash.contains(n){
-                if sum == 0{
-                    sum =1;
-                }else{
+        let mut sum = 0;
+        my_numbers.iter().for_each(|n| {
+            if win_hash.contains(n) {
+                if sum == 0 {
+                    sum = 1;
+                } else {
                     sum = sum * 2;
                 }
             }
@@ -24,38 +24,50 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(total)
 }
 
-fn parse(input: &str)->(u64, Vec<u64>, Vec<u64>){
+fn parse(input: &str) -> (u64, Vec<u64>, Vec<u64>) {
     let mut parts = input.split("|");
     let left = parts.next().unwrap();
     let right = parts.next().unwrap();
     let mut card_split = left.split(":");
-    let id = card_split.next().unwrap().split_whitespace().into_iter().nth(1).unwrap().parse::<u64>().unwrap();
+    let id = card_split
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .into_iter()
+        .nth(1)
+        .unwrap()
+        .parse::<u64>()
+        .unwrap();
     let winning_numbers = parse_numbers(card_split.next().unwrap().trim());
     let my_numbers = parse_numbers(right);
     return (id, winning_numbers, my_numbers);
 }
-fn parse_numbers(input:&str) -> Vec<u64> {
-    return input.split_whitespace().map(|w|{
-        return w.parse::<u64>().unwrap();
-    }).collect::<Vec<u64>>();
+fn parse_numbers(input: &str) -> Vec<u64> {
+    return input
+        .split_whitespace()
+        .map(|w| {
+            return w.parse::<u64>().unwrap();
+        })
+        .collect::<Vec<u64>>();
 }
-
 
 pub fn part_two(input: &str) -> Option<u64> {
     let lines = input.lines();
-    let cards = lines.map(|l|{
-        let (id, winning_numbers, my_numbers) =parse(l);
-        let win_hash = HashSet::<u64>::from_iter(winning_numbers);
-        let my_hash = HashSet::<u64>::from_iter(my_numbers);
-        let sum =my_hash.intersection(&win_hash).count();
-        return (id as usize, sum);
-    }).collect::<Vec<(usize,usize)>>();
-    let mut totals = vec![1; cards.len() + 1];
-    totals[0] = 0;
-    for (card_number, (_,sum)) in cards.iter().enumerate() {
-        let card_number = card_number + 1;
-        for index in card_number..(card_number + sum) {
-            totals[index + 1] += totals[card_number];
+    let cards = lines
+        .map(|l| {
+            let (id, winning_numbers, my_numbers) = parse(l);
+            let win_hash = HashSet::<u64>::from_iter(winning_numbers);
+            let my_hash = HashSet::<u64>::from_iter(my_numbers);
+            let sum = my_hash.intersection(&win_hash).count();
+            return (id as usize, sum);
+        })
+        .collect::<Vec<(usize, usize)>>();
+
+    let mut totals = vec![1; cards.len()];
+    for ((card_number, sum)) in cards.into_iter() {
+        let location = card_number - 1;
+        for index in (location)..(location + sum) {
+            totals[index + 1] += totals[location];
         }
     }
     Some(totals.iter().sum())
