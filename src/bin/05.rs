@@ -1,3 +1,4 @@
+use std::ops::Range;
 advent_of_code::solution!(5);
 
 #[derive(Debug)]
@@ -96,24 +97,27 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
 
-    let mut seed = maps
+    let mut seeds = maps
         .iter()
         .last()
         .unwrap()
-        .iter()
-        .filter(|x| x.destination != 0) //ignore the lowest range
-        .min_by(|x, y| x.destination.cmp(&y.destination))
-        .unwrap()
-        .destination;
-    loop {
-        let source = source(seed, &maps);
-        for r in valid_ranges.iter() {
-            if r.contains(&source) {
-                return Some(seed);
+        .iter().map(|x|x.destination..(x.destination+x.length)).collect::<Vec<Range<u64>>>();
+
+    seeds.sort_by(|a,b|{
+        a.start.cmp(&b.start)
+    });
+
+    for i in seeds{
+        for seed in  i{
+            let source = source(seed, &maps);
+            for r in valid_ranges.iter() {
+                if r.contains(&source) {
+                    return Some(seed);
+                }
             }
         }
-        seed += 1;
     }
+    return None;
 }
 
 fn source(seed: u64, maps: &Vec<Vec<Map>>) -> u64 {
