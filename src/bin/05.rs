@@ -7,9 +7,8 @@ struct Map {
 }
 
 impl Map {
-    fn get_source(&self, dest: u64) -> Option<u64> {
-        // < needed?
-        return if (self.destination..(self.destination + self.length)).contains(&dest) {
+    fn get_source(&self, dest: &u64) -> Option<u64> {
+        return if (self.destination..(self.destination + self.length)).contains(dest) {
             Some(dest - self.destination + self.source)
         } else {
             None
@@ -23,7 +22,7 @@ impl Map {
     }
 }
 
-fn parse_map(s: &str) -> (&str, &str, Vec<Map>) {
+fn parse_map(s: &str) -> Vec<Map> {
     let mut lines = s.lines();
     let name = lines.next().unwrap();
     let s_name = name.split('-').collect::<Vec<&str>>();
@@ -42,7 +41,7 @@ fn parse_map(s: &str) -> (&str, &str, Vec<Map>) {
             }
         })
         .collect::<Vec<Map>>();
-    return (s_name[0], s_name[2], v);
+    return v;
 }
 pub fn part_one(input: &str) -> Option<u64> {
     let mut maps_s = input.split("\n\n");
@@ -50,7 +49,7 @@ pub fn part_one(input: &str) -> Option<u64> {
     init_seeds.next();
 
     let seeds: Vec<u64> = init_seeds.map(|s| s.parse::<u64>().unwrap()).collect();
-    let maps: Vec<(&str, &str, Vec<Map>)> = maps_s
+    let maps: Vec<Vec<Map>> = maps_s
         .map(|m| {
             return parse_map(m);
         })
@@ -60,7 +59,7 @@ pub fn part_one(input: &str) -> Option<u64> {
         .iter()
         .map(|seed| {
             let mut curr_seed = seed.to_owned();
-            maps.iter().for_each(|(_, _, map)| {
+            maps.iter().for_each(|map| {
                 for m in map.iter() {
                     match m.get_dest(curr_seed) {
                         None => {}
@@ -91,7 +90,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         valid_ranges.push(left..=(right + left));
         x += 2;
     }
-    let maps: Vec<(&str, &str, Vec<Map>)> = maps_s
+    let maps: Vec<Vec<Map>> = maps_s
         .map(|m| {
             return parse_map(m);
         })
@@ -109,11 +108,11 @@ pub fn part_two(input: &str) -> Option<u64> {
     }
 }
 
-fn source(seed: u64, maps: &Vec<(&str, &str, Vec<Map>)>) -> u64 {
+fn source(seed: u64, maps: &Vec<Vec<Map>>) -> u64 {
     let mut s = seed;
-    maps.iter().rev().for_each(|(_, _, v_maps)| {
+    &maps.iter().rev().for_each(|v_maps| {
         for m in v_maps.iter() {
-            match m.get_source(s) {
+            match m.get_source(&s) {
                 None => {}
                 Some(src) => {
                     s = src;
