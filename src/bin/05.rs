@@ -101,14 +101,24 @@ pub fn part_two(input: &str) -> Option<u64> {
         .iter()
         .last()
         .unwrap()
-        .iter().map(|x|x.destination..(x.destination+x.length)).collect::<Vec<Range<u64>>>();
+        .iter()
+        .map(|x| x.destination..(x.destination + x.length))
+        .collect::<Vec<Range<u64>>>();
 
-    seeds.sort_by(|a,b|{
-        a.start.cmp(&b.start)
-    });
+    seeds.sort_by(|a, b| a.start.cmp(&b.start));
 
-    for i in seeds{
-        for seed in  i{
+    // Prioritize first value
+    for i in &seeds {
+        let seed = i.start;
+        let source = source(seed, &maps);
+        for r in valid_ranges.iter() {
+            if r.contains(&source) {
+                return Some(seed);
+            }
+        }
+    }
+    for i in seeds {
+        for seed in i {
             let source = source(seed, &maps);
             for r in valid_ranges.iter() {
                 if r.contains(&source) {
