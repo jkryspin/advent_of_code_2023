@@ -1,3 +1,6 @@
+use std::cmp::Ordering;
+use std::ops::RangeInclusive;
+use std::str::SplitWhitespace;
 advent_of_code::solution!(5);
 
 struct Map {
@@ -81,36 +84,55 @@ pub fn part_two(input: &str) -> Option<u64> {
     let mut maps_s = input.split("\n\n");
     let mut init_seeds = maps_s.next().unwrap().split_whitespace();
     init_seeds.next();
-    let mut x = 0;
-    let v_seeds = init_seeds.collect::<Vec<&str>>();
-    let mut valid_ranges = vec![];
-    while x + 1 < v_seeds.len() {
-        let left = v_seeds[x].parse::<u64>().unwrap();
-        let right = v_seeds[x + 1].parse::<u64>().unwrap();
-        valid_ranges.push(left..=(right + left));
-        x += 2;
-    }
-    let maps: Vec<Vec<Map>> = maps_s
+
+    let valid_ranges = get_range(init_seeds.clone());
+    let maps: Vec<Vec<Map>> = maps_s.clone()
         .map(|m| {
             return parse_map(m);
         })
         .collect();
 
-    let mut seed = 0;
-    loop {
-        let source = source(seed, &maps);
+    let rev = maps.iter().rev().collect::<Vec<&Vec<Map>>>();
+    let mut valid_ranges_locations = maps.last().unwrap().iter().map(|c|{
+        return c.destination..=(c.destination + c.length);
+    }).collect::<Vec<_>>();
+    valid_ranges_locations.sort_by(|a,b|{
+        if a.start() > b.start() {
+            return Ordering::Greater;
+        }
+        return Ordering::Less;
+    });
+
+    for seed_range in valid_ranges_locations {
+        for seed in seed_range{
+        let source = source(seed, &rev);
         for r in valid_ranges.iter() {
             if r.contains(&source) {
                 return Some(seed);
             }
         }
-        seed += 1;
+        }
     }
+    return None
 }
 
-fn source(seed: u64, maps: &Vec<Vec<Map>>) -> u64 {
+fn get_range(init_seeds: SplitWhitespace) -> Vec<RangeInclusive<u64>> {
+    let mut x = 0;
+    let v_seeds = init_seeds.collect::<Vec<&str>>();
+    let mut valid_ranges = vec![];
+    while x + 1 < v_seeds.len() {
+        println!("{}", &v_seeds[x]);
+        let left = v_seeds[x].parse::<u64>().unwrap();
+        let right = v_seeds[x + 1].parse::<u64>().unwrap();
+        valid_ranges.push(left..=(right + left));
+        x += 2;
+    }
+    return valid_ranges;
+}
+
+fn source(seed: u64, maps: &Vec<&Vec<Map>>) -> u64 {
     let mut s = seed;
-    &maps.iter().rev().for_each(|v_maps| {
+    &maps.iter().for_each(|v_maps| {
         for m in v_maps.iter() {
             match m.get_source(&s) {
                 None => {}
