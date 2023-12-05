@@ -1,5 +1,6 @@
 advent_of_code::solution!(5);
 
+#[derive(Debug)]
 struct Map {
     source: u64,
     destination: u64,
@@ -24,8 +25,7 @@ impl Map {
 
 fn parse_map(s: &str) -> Vec<Map> {
     let mut lines = s.lines();
-    let name = lines.next().unwrap();
-    let s_name = name.split('-').collect::<Vec<&str>>();
+    lines.next();
 
     let v = lines
         .into_iter()
@@ -96,7 +96,15 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
 
-    let mut seed = 0;
+    let mut seed = maps
+        .iter()
+        .last()
+        .unwrap()
+        .iter()
+        .filter(|x| x.destination != 0) //ignore the lowest range
+        .min_by(|x, y| x.destination.cmp(&y.destination))
+        .unwrap()
+        .destination;
     loop {
         let source = source(seed, &maps);
         for r in valid_ranges.iter() {
@@ -110,7 +118,7 @@ pub fn part_two(input: &str) -> Option<u64> {
 
 fn source(seed: u64, maps: &Vec<Vec<Map>>) -> u64 {
     let mut s = seed;
-    &maps.iter().rev().for_each(|v_maps| {
+    maps.iter().rev().for_each(|v_maps| {
         for m in v_maps.iter() {
             match m.get_source(&s) {
                 None => {}
