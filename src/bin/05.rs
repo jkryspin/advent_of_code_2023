@@ -1,7 +1,5 @@
-use std::ops::Range;
 advent_of_code::solution!(5);
 
-#[derive(Debug)]
 struct Map {
     source: u64,
     destination: u64,
@@ -25,10 +23,10 @@ impl Map {
 }
 
 fn parse_map(s: &str) -> Vec<Map> {
-    let mut lines = s.lines();
-    lines.next();
+    let lines = s.lines();
 
     let v = lines
+        .skip(1)
         .into_iter()
         .map(|l| {
             let mut split = l.split_whitespace();
@@ -97,37 +95,16 @@ pub fn part_two(input: &str) -> Option<u64> {
         })
         .collect();
 
-    let mut seeds = maps
-        .iter()
-        .last()
-        .unwrap()
-        .iter()
-        .map(|x| x.destination..(x.destination + x.length))
-        .collect::<Vec<Range<u64>>>();
-
-    seeds.sort_by(|a, b| a.start.cmp(&b.start));
-
-    // Prioritize first value
-    for i in &seeds {
-        let seed = i.start;
+    let mut seed = 0;
+    loop {
         let source = source(seed, &maps);
         for r in valid_ranges.iter() {
             if r.contains(&source) {
                 return Some(seed);
             }
         }
+        seed += 1;
     }
-    for i in seeds {
-        for seed in i {
-            let source = source(seed, &maps);
-            for r in valid_ranges.iter() {
-                if r.contains(&source) {
-                    return Some(seed);
-                }
-            }
-        }
-    }
-    return None;
 }
 
 fn source(seed: u64, maps: &Vec<Vec<Map>>) -> u64 {
