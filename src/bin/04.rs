@@ -1,13 +1,11 @@
-use std::collections::{HashMap, HashSet};
-use std::ops::Add;
+use std::collections::HashSet;
 advent_of_code::solution!(4);
 
 pub fn part_one(input: &str) -> Option<u64> {
-    //Card   1: 44 22 11 15 37 50  3 90 60 34 | 35 60 76  3 21 84 45 52 15 72 13 31 90  6 37 44 34 53 68 22 50 38 67 11 55
     let lines = input.lines();
     let mut total = 0;
     lines.for_each(|l| {
-        let (id, winning_numbers, my_numbers) = parse(l);
+        let (_, winning_numbers, my_numbers) = parse(l);
         let win_hash = HashSet::<u64>::from_iter(winning_numbers);
         let mut sum = 0;
         my_numbers.iter().for_each(|n| {
@@ -64,7 +62,7 @@ pub fn part_two(input: &str) -> Option<u64> {
         .collect::<Vec<(usize, usize)>>();
 
     let mut totals = vec![1; cards.len()];
-    for ((card_number, sum)) in cards.into_iter() {
+    for (card_number, sum) in cards.into_iter() {
         let location = card_number - 1;
         for index in (location)..(location + sum) {
             totals[index + 1] += totals[location];

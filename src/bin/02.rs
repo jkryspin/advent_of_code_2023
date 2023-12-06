@@ -17,7 +17,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 fn parse(l: &str, re: &Regex, cubed: &Regex) -> (Vec<Vec<CubeSet>>, u32) {
-    let mut games = l.split(";");
+    let games = l.split(";");
     let id_str = games.clone().next().unwrap();
     let game_id = re.find(id_str).unwrap().as_str().parse::<u32>().unwrap();
     let cubes: Vec<_> = games

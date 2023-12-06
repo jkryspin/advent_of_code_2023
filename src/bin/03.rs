@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::ops::{Add, DerefMut};
 advent_of_code::solution!(3);
 
 pub fn part_one(input: &str) -> Option<u32> {
@@ -121,9 +120,9 @@ pub fn part_two(input: &str) -> Option<u32> {
     });
 
     let mut sum = 0;
-    cog_map.iter().for_each(|(key, val)| {
+    cog_map.iter().for_each(|(_, val)| {
         if val.len() == 2 {
-            sum += (val[0] * val[1]);
+            sum += val[0] * val[1];
         }
     });
 
