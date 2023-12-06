@@ -2,8 +2,8 @@ advent_of_code::solution!(6);
 
 pub fn part_one(input: &str) -> Option<u64> {
     let mut lines = input.lines();
-    let times = parse_part_one(&mut lines);
-    let records = parse_part_one(&mut lines);
+    let times = parse_part_one(lines.next().unwrap());
+    let records = parse_part_one(lines.next().unwrap());
     let total = (0..times.len())
         .into_iter()
         .map(|i| Race {
@@ -15,6 +15,17 @@ pub fn part_one(input: &str) -> Option<u64> {
         .unwrap();
 
     Some(total)
+}
+
+pub fn part_two(input: &str) -> Option<u64> {
+    let mut lines = input.lines();
+    let time = parse_part_two(lines.next().unwrap());
+    let distance = parse_part_two(lines.next().unwrap());
+    let r = Race {
+        time,
+        record: distance,
+    };
+    Some(r.ways_to_win())
 }
 
 struct Race {
@@ -38,10 +49,8 @@ impl Race {
     }
 }
 
-fn parse_part_one(lines: &mut core::str::Lines) -> Vec<u64> {
-    let times = lines
-        .next()
-        .unwrap()
+fn parse_part_one(line: &str) -> Vec<u64> {
+    let times = line
         .split_whitespace()
         .skip(1)
         .map(|x| x.parse().unwrap())
@@ -49,10 +58,8 @@ fn parse_part_one(lines: &mut core::str::Lines) -> Vec<u64> {
     return times;
 }
 
-fn parse_part_two(lines: &mut core::str::Lines) -> u64 {
-    let times = lines
-        .next()
-        .unwrap()
+fn parse_part_two(line: &str) -> u64 {
+    let times = line
         .split_whitespace()
         .skip(1)
         .collect::<Vec<&str>>()
@@ -60,16 +67,6 @@ fn parse_part_two(lines: &mut core::str::Lines) -> u64 {
         .parse::<u64>()
         .unwrap();
     return times;
-}
-pub fn part_two(input: &str) -> Option<u64> {
-    let mut lines = input.lines();
-    let time = parse_part_two(&mut lines);
-    let distance = parse_part_two(&mut lines);
-    let r = Race {
-        time,
-        record: distance,
-    };
-    Some(r.ways_to_win())
 }
 
 #[cfg(test)]
