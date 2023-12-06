@@ -1,22 +1,19 @@
-use std::io::Lines;
 advent_of_code::solution!(6);
 
-// Time:        60     94     78     82
-// Distance:   475   2138   1015   1650
 pub fn part_one(input: &str) -> Option<u64> {
     let mut lines = input.lines();
     let times = parse_part_one(&mut lines);
     let records = parse_part_one(&mut lines);
-    let races = (0..times.len())
+    let total = (0..times.len())
         .into_iter()
         .map(|i| Race {
             time: times[i],
             record: records[i],
         })
-        .collect::<Vec<Race>>();
+        .map(|r| r.ways_to_win())
+        .reduce(|acc, e| acc * e)
+        .unwrap();
 
-    let mut total = 1;
-    races.iter().for_each(|r| total = total * r.ways_to_win());
     Some(total)
 }
 
@@ -27,14 +24,17 @@ struct Race {
 
 impl Race {
     fn ways_to_win(&self) -> u64 {
-        let mut ways = 0;
-        for held_time in 0..self.time {
-            let traveled = held_time * (self.time - held_time);
-            if traveled > self.record {
-                ways += 1;
-            }
-        }
-        return ways;
+        (0..self.time)
+            .into_iter()
+            .reduce(|acc, held_time| {
+                let traveled = held_time * (self.time - held_time);
+                if traveled > self.record {
+                    acc + 1
+                } else {
+                    acc
+                }
+            })
+            .unwrap()
     }
 }
 
@@ -83,11 +83,8 @@ mod tests {
     }
 
     #[test]
-    fn valid_race() {}
-
-    #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(71503));
     }
 }
