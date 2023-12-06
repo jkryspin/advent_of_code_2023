@@ -23,34 +23,33 @@ pub fn part_two(input: &str) -> Option<u32> {
     map.insert("seven", "s7n");
     map.insert("eight", "e8t");
     map.insert("nine", "n9e");
-    let lines_new = lines.map(|l| {
+    return Some(lines.fold(0, |acc, l| {
         let mut res: String = l.to_string();
         map.iter().for_each(|c| {
-            res = res.replace(c.0, c.1).as_str().parse().unwrap();
+            res = res.replace(c.0, c.1);
         });
-        return res;
-    });
-    let mut sum = 0;
-    lines_new.into_iter().for_each(|s| {
-        let (first, last) = parse_line(s);
-        sum += first * 10 + last
-    });
-
-    Some(sum)
+        let (first, last) = parse_line(res);
+        acc + first * 10 + last
+    }));
 }
 fn parse_line(s: String) -> (u32, u32) {
-    let mut first = None;
-    let mut last = None;
-    s.chars().for_each(|c| {
+    let first = get_first_digit(s.chars().collect::<Vec<char>>());
+    let last = get_first_digit(s.chars().rev().collect::<Vec<char>>());
+    return (first, last);
+}
+
+fn get_first_digit(s: Vec<char>) -> u32 {
+    for c in s {
         let d = c.to_digit(10);
-        if first.is_none() && d.is_some() {
-            first = d;
+        match d {
+            None => {}
+            Some(c) => {
+                return c;
+            }
         }
-        if d.is_some() {
-            last = d;
-        }
-    });
-    return (first.unwrap(), last.unwrap());
+    }
+    // This shouldn't happen
+    return 0;
 }
 
 #[cfg(test)]
