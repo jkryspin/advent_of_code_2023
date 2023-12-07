@@ -26,7 +26,10 @@ fn sort(hands: &mut Vec<Hand>) {
     });
 }
 pub fn part_one(input: &str) -> Option<u32> {
-    let mut hands = input.lines().map(|l| Hand::new(l)).collect::<Vec<_>>();
+    let mut hands = input
+        .lines()
+        .map(|l| Hand::new(l, true))
+        .collect::<Vec<_>>();
     sort(&mut hands);
     let mut sum = 0;
     let mut seen: HashSet<u32> = Default::default();
@@ -49,13 +52,20 @@ struct Hand {
 }
 
 impl Hand {
-    fn new(s: &str) -> Self {
+    fn new(s: &str, part: bool) -> Self {
         let (l, r) = s.split_once(" ").unwrap();
         let bid = r.parse::<u32>().unwrap();
-        let strongest_type = Hand::strongest_type(l);
-        let map = vec![
-            'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
-        ];
+        let strongest_type = Hand::strongest_type(l, part);
+
+        let map = if part {
+            vec![
+                '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
+            ]
+        } else {
+            vec![
+                'J', '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'Q', 'K', 'A',
+            ]
+        };
         Self {
             cards: l.chars().collect(),
             cards_strength: l
@@ -67,37 +77,44 @@ impl Hand {
         }
     }
 
-    fn strongest_type(s: &str) -> HandType {
+    fn strongest_type(s: &str, part: bool) -> HandType {
         let mut map = HashMap::<char, u32>::new();
         for c in s.chars() {
             map.insert(c, map.get(&c).unwrap_or(&0).clone() + 1);
         }
-        let mut v = map.iter().collect::<Vec<_>>();
-        v.sort_by(|a, b| a.0.cmp(b.0));
-
-        if map.values().all(|v| v == &5) {
+        let mut joker_count = map.get(&'J').unwrap_or(&0).clone();
+        if part {
+            joker_count = 0;
+        }
+        if joker_count == 5 {
             return FiveOfKind;
         }
-        if map.values().filter(|&&v| v == 4).count() == 1 {
+        let mut v = map.iter().collect::<Vec<_>>();
+        v.sort_by(|a, b| a.0.cmp(b.0));
+        map.remove(&'J');
+        dbg!(&map);
+
+        if map.values().filter(|&&v| v + joker_count == 5).count() == 1 {
+            return FiveOfKind;
+        }
+        if map.values().filter(|&&v| v + joker_count == 4).count() == 1 {
             return FourOfKind;
         }
         if map.values().filter(|&&v| v == 2).count() == 1
-            && map.values().filter(|&&v| v == 3).count() == 1
+            && map.values().filter(|&&v| v + joker_count == 3).count() == 1
         {
             return FullHouse;
         }
-        if map.values().filter(|&&v| v == 3).count() == 1 {
+        if map.values().filter(|&&v| v + joker_count == 3).count() == 1 {
             return ThreeOfKind;
         }
-        if map.values().filter(|&&v| v == 2).count() == 2 {
+        if map.values().filter(|&&v| v + joker_count == 2).count() == 2 {
             return TwoPair;
         }
-        if map.values().filter(|&&c| c == 2).count() == 1 {
+        if map.values().filter(|&&c| c + joker_count == 2).count() == 1 {
             return OnePair;
         }
-        if map.values().all(|v| v == &1) {
-            return HighCard;
-        }
+        return HighCard;
         panic!("No pair matched card!!")
     }
 }
@@ -128,7 +145,10 @@ impl HandType {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    let mut hands = input.lines().map(|l| Hand::new(l)).collect::<Vec<_>>();
+    let mut hands = input
+        .lines()
+        .map(|l| Hand::new(l, false))
+        .collect::<Vec<_>>();
     sort(&mut hands);
     let mut sum = 0;
     let mut seen: HashSet<u32> = Default::default();
@@ -154,38 +174,49 @@ mod tests {
 
     #[test]
     fn type_checker() {
-        let t = Hand::strongest_type("33332");
+        let t = Hand::strongest_type("33332", true);
         assert_eq!(t, FourOfKind);
-        let t = Hand::strongest_type("33333");
+        let t = Hand::strongest_type("33333", true);
         assert_eq!(t, FiveOfKind);
 
-        let t = Hand::strongest_type("23332");
+        let t = Hand::strongest_type("23332", true);
         assert_eq!(t, FullHouse);
-        let t = Hand::strongest_type("2333A");
+        let t = Hand::strongest_type("2333A", true);
         assert_eq!(t, ThreeOfKind);
-        let t = Hand::strongest_type("23432");
+        let t = Hand::strongest_type("23432", true);
         assert_eq!(t, TwoPair);
-        let t = Hand::strongest_type("A23A4");
+        let t = Hand::strongest_type("A23A4", true);
         assert_eq!(t, OnePair);
-        let t = Hand::strongest_type("23456");
+        let t = Hand::strongest_type("23456", true);
         assert_eq!(t, HighCard);
     }
 
     #[test]
     fn sorts() {
-        let threes = Hand::strongest_type("33332");
+        let threes = Hand::strongest_type("33332", true);
         assert_eq!(threes, FourOfKind);
-        let aas = Hand::strongest_type("2AAAA");
+        let aas = Hand::strongest_type("2AAAA", true);
         assert_eq!(aas, FourOfKind);
 
-        let mut hands = vec![Hand::new("33332 1"), Hand::new("2AAAA 2")];
+        let mut hands = vec![Hand::new("33332 1", true), Hand::new("2AAAA 2", true)];
         sort(&mut hands);
         assert_eq!(hands[0].bid, 2)
     }
 
     #[test]
+    fn part_two_jokers() {
+        let a = Hand::strongest_type("JJJJJ", false);
+        assert_eq!(a, FiveOfKind);
+    }
+    #[test]
+    fn part_two_expected() {
+        let a = Hand::strongest_type("QJJQ2", false);
+        assert_eq!(a, FourOfKind);
+    }
+
+    #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(5905));
     }
 }
