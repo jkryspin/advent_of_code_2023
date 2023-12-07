@@ -51,12 +51,12 @@ struct Hand {
 }
 
 impl Hand {
-    fn new(s: &str, part: bool) -> Self {
+    fn new(s: &str, is_part_one: bool) -> Self {
         let (l, r) = s.split_once(" ").unwrap();
         let bid = r.parse::<u32>().unwrap();
-        let strongest_type = Hand::strongest_type(l, part);
+        let strongest_type = Hand::strongest_type(l, is_part_one);
 
-        let map = if part {
+        let map = if is_part_one {
             vec![
                 '2', '3', '4', '5', '6', '7', '8', '9', 'T', 'J', 'Q', 'K', 'A',
             ]
@@ -107,11 +107,7 @@ impl Hand {
         }
 
         for (c, val) in map.iter() {
-            for other in map
-                .iter()
-                .filter(|(other_c, other_val)| other_c != &c)
-                .into_iter()
-            {
+            for other in map.iter().filter(|(other_c, _)| other_c != &c).into_iter() {
                 if val + joker_count == 3 && other.1 == &2 {
                     return FullHouse;
                 }
@@ -125,11 +121,7 @@ impl Hand {
         }
 
         for (c, val) in map.iter() {
-            for other in map
-                .iter()
-                .filter(|(other_c, other_val)| other_c != &c)
-                .into_iter()
-            {
+            for other in map.iter().filter(|(other_c, _)| other_c != &c).into_iter() {
                 if val + joker_count == 2 && other.1 == &2 {
                     return TwoPair;
                 }
@@ -142,7 +134,6 @@ impl Hand {
             }
         }
         return HighCard;
-        panic!("No pair matched card!!")
     }
 }
 
@@ -178,9 +169,7 @@ pub fn part_two(input: &str) -> Option<u32> {
         .collect::<Vec<_>>();
     sort(&mut hands);
     let mut sum = 0;
-    let mut seen: HashSet<u32> = Default::default();
     hands.iter().enumerate().for_each(|(size, h)| {
-        seen.insert(h.strongest_type.relative_value());
         let delta = (size as u32 + 1) * h.bid;
         sum += delta;
     });
