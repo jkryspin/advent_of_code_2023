@@ -94,13 +94,13 @@ impl Hand {
         if !part {
             map.remove(&'J');
         }
-        for (c, val) in map.iter() {
+        for (_, val) in map.iter() {
             if val + joker_count == 5 {
                 return FiveOfKind;
             }
         }
 
-        for (c, val) in map.iter() {
+        for (_, val) in map.iter() {
             if val + joker_count == 4 {
                 return FourOfKind;
             }
@@ -136,15 +136,9 @@ impl Hand {
             }
         }
 
-        for (c, val) in map.iter() {
-            for other in map
-                .iter()
-                .filter(|(other_c, other_val)| other_c != &c)
-                .into_iter()
-            {
-                if val + joker_count == 2 {
-                    return OnePair;
-                }
+        for (_, val) in map.iter() {
+            if val + joker_count == 2 {
+                return OnePair;
             }
         }
         return HighCard;
