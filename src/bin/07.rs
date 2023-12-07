@@ -37,7 +37,6 @@ pub fn part_one(input: &str) -> Option<u32> {
         seen.insert(h.strongest_type.relative_value());
         let delta = (size as u32 + 1) * h.bid;
         sum += delta;
-        dbg!(h, sum, delta);
     });
 
     Some(sum)
@@ -89,30 +88,64 @@ impl Hand {
         if joker_count == 5 {
             return FiveOfKind;
         }
+
         let mut v = map.iter().collect::<Vec<_>>();
         v.sort_by(|a, b| a.0.cmp(b.0));
-        map.remove(&'J');
-        dbg!(&map);
+        if !part {
+            map.remove(&'J');
+        }
+        for (c, val) in map.iter() {
+            if val + joker_count == 5 {
+                return FiveOfKind;
+            }
+        }
 
-        if map.values().filter(|&&v| v + joker_count == 5).count() == 1 {
-            return FiveOfKind;
+        for (c, val) in map.iter() {
+            if val + joker_count == 4 {
+                return FourOfKind;
+            }
         }
-        if map.values().filter(|&&v| v + joker_count == 4).count() == 1 {
-            return FourOfKind;
+
+        for (c, val) in map.iter() {
+            for other in map
+                .iter()
+                .filter(|(other_c, other_val)| other_c != &c)
+                .into_iter()
+            {
+                if val + joker_count == 3 && other.1 == &2 {
+                    return FullHouse;
+                }
+            }
         }
-        if map.values().filter(|&&v| v == 2).count() == 1
-            && map.values().filter(|&&v| v + joker_count == 3).count() == 1
-        {
-            return FullHouse;
+
+        for (_, val) in map.iter() {
+            if val + joker_count == 3 {
+                return ThreeOfKind;
+            }
         }
-        if map.values().filter(|&&v| v + joker_count == 3).count() == 1 {
-            return ThreeOfKind;
+
+        for (c, val) in map.iter() {
+            for other in map
+                .iter()
+                .filter(|(other_c, other_val)| other_c != &c)
+                .into_iter()
+            {
+                if val + joker_count == 2 && other.1 == &2 {
+                    return TwoPair;
+                }
+            }
         }
-        if map.values().filter(|&&v| v + joker_count == 2).count() == 2 {
-            return TwoPair;
-        }
-        if map.values().filter(|&&c| c + joker_count == 2).count() == 1 {
-            return OnePair;
+
+        for (c, val) in map.iter() {
+            for other in map
+                .iter()
+                .filter(|(other_c, other_val)| other_c != &c)
+                .into_iter()
+            {
+                if val + joker_count == 2 {
+                    return OnePair;
+                }
+            }
         }
         return HighCard;
         panic!("No pair matched card!!")
@@ -156,7 +189,6 @@ pub fn part_two(input: &str) -> Option<u32> {
         seen.insert(h.strongest_type.relative_value());
         let delta = (size as u32 + 1) * h.bid;
         sum += delta;
-        dbg!(h, sum, delta);
     });
     Some(sum)
 }
