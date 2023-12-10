@@ -14,5 +14,6 @@ doctest = false
 test_lib = []
 
 [dependencies]
+ndarray = "0.15.6"
 pico-args = "0.5.0"
 regex = "1.10.2"
