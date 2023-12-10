@@ -9,7 +9,6 @@ pub fn part_one(input: &str) -> Option<u32> {
     let x_length = lines.clone().into_iter().next().unwrap().len();
     let y_length = lines.len();
     let mut grid = ndarray::Array2::<Pipe>::default((x_length, y_length));
-    println!("{}", grid);
     let mut start: (usize, usize) = (0, 0);
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
         for (j, col) in row.iter_mut().enumerate() {
@@ -20,8 +19,6 @@ pub fn part_one(input: &str) -> Option<u32> {
             }
         }
     }
-    println!("{}", grid);
-    println!("{:?}", start);
     let mut dir_came_in_on = South;
     let mut steps = 0;
     let mut current_pos = (start.1, start.0);
@@ -29,9 +26,7 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     loop {
         let pos = grid.get(current_pos).unwrap();
-        dbg!(pos);
         dir_came_in_on = pos.get_next(dir_came_in_on).unwrap();
-        dbg!(&dir_came_in_on);
         match dir_came_in_on {
             North => {
                 current_pos.0 += 1;
@@ -51,7 +46,6 @@ pub fn part_one(input: &str) -> Option<u32> {
             break;
         }
     }
-    dbg!(steps, current_pos, start);
     Some(steps / 2)
 }
 
@@ -112,24 +106,22 @@ impl Pipe {
     }
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+fn solve(input: &str) -> (i32, Vec<(usize, usize)>) {
     let lines = input.lines().collect::<Vec<_>>();
     let x_length = lines.clone().into_iter().next().unwrap().len();
     let y_length = lines.len();
-    let mut grid = ndarray::Array2::<Pipe>::default((x_length, y_length));
-    println!("{}", grid);
+    let mut grid = ndarray::Array2::<Pipe>::default((y_length, x_length));
     let mut start: (usize, usize) = (0, 0);
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
         for (j, col) in row.iter_mut().enumerate() {
-            let pipe = Pipe::from(lines.get(i).unwrap().chars().nth(j).unwrap());
+            let c = lines.get(i).unwrap().chars().nth(j).unwrap();
+            let pipe = Pipe::from(c);
             *col = pipe.clone();
             if &pipe.pipe_kind == &Starting {
                 start = (j, i);
             }
         }
     }
-    println!("{}", grid);
-    println!("{:?}", start);
     let mut dir_came_in_on = South;
     let mut steps = 0;
     let mut current_pos = (start.1, start.0);
@@ -138,9 +130,7 @@ pub fn part_two(input: &str) -> Option<u32> {
 
     loop {
         let pos = grid.get(current_pos).unwrap();
-        dbg!(pos);
         dir_came_in_on = pos.get_next(dir_came_in_on).unwrap();
-        dbg!(&dir_came_in_on);
         match dir_came_in_on {
             North => {
                 current_pos.0 += 1;
@@ -161,7 +151,21 @@ pub fn part_two(input: &str) -> Option<u32> {
             break;
         }
     }
-    dbg!(steps, current_pos, start);
+    return (steps, positions);
+}
+
+pub fn part_two(input: &str) -> Option<i32> {
+    Some(shoelace(positions))
+}
+
+fn shoelace(positions: Vec<(usize, usize)>) -> i32 {
+    let mut a = 0i32;
+    let mut b = 0i32;
+    for x in 0..positions.len() {
+        a += (positions[x].0 * positions[(x + 1) % positions.len()].1) as i32;
+        b += (positions[x].1 * positions[(x + 1) % positions.len()].0) as i32;
+    }
+    return (a - b).abs() / 2 - positions.len() as i32 / 2 + 1;
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -283,7 +287,17 @@ LJ...",
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
+        let result = part_two(
+            "...........
+.S-------7.
+.|F-----7|.
+.||.....||.
+.||.....||.
+.|L-7.F-J|.
+.|..|.|..|.
+.L--J.L--J.
+...........",
+        );
         assert_eq!(result, None);
     }
 }
