@@ -38,21 +38,13 @@ fn solve(input: &str, spacing: u32) -> usize {
     }
     let mut sum = 0;
     let mut seen = HashSet::<((usize, usize), (usize, usize))>::new();
-    let mut steps = 0;
     galaxies.iter().for_each(|g| {
         galaxies.iter().for_each(|g2| {
             if &g != &g2 && !seen.contains(&(g.clone(), g2.clone())) {
-                let d = distance(
-                    g.clone(),
-                    g2.clone(),
-                    &row_has_galaxy,
-                    &col_has_galaxy,
-                    spacing as usize,
-                );
+                let d = distance(g, g2, &row_has_galaxy, &col_has_galaxy, spacing as usize);
                 seen.insert((g.clone(), g2.clone()));
-                sum += d;
                 seen.insert((g2.clone(), g.clone()));
-                steps += 1;
+                sum += d;
             }
         })
     });
@@ -60,8 +52,8 @@ fn solve(input: &str, spacing: u32) -> usize {
 }
 
 fn distance(
-    one: (usize, usize),
-    two: (usize, usize),
+    one: &(usize, usize),
+    two: &(usize, usize),
     row_has_galaxy: &HashSet<usize>,
     col_has_galaxy: &HashSet<usize>,
     spacing: usize,
@@ -101,7 +93,7 @@ mod tests {
         // let d = distance((1, 5), (4, 9), &row_has_g, &col_has_g);
         // assert_eq!(d, 9);
 
-        let d = distance((3, 0), (7, 8), &row_has_g, &col_has_g, 1);
+        let d = distance(&(3, 0), &(7, 8), &row_has_g, &col_has_g, 1);
         assert_eq!(d, 15);
         // assert_eq!(result, None);
     }
