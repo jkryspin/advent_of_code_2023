@@ -1,18 +1,29 @@
 use crate::Dir::{East, North, South, West};
 use crate::PipeKind::{Ground, Horizontal, Seven, Starting, Vertical, F, J, L};
 use ndarray::Axis;
-use std::fmt::{write, Display, Formatter};
+use std::fmt::{Display, Formatter};
 advent_of_code::solution!(10);
 
 pub fn part_one(input: &str) -> Option<u32> {
+    let (steps, _) = solve(input);
+    Some(steps as u32 / 2)
+}
+
+pub fn part_two(input: &str) -> Option<i32> {
+    let (_, positions) = solve(input);
+    Some(shoelace(positions))
+}
+
+fn solve(input: &str) -> (i32, Vec<(usize, usize)>) {
     let lines = input.lines().collect::<Vec<_>>();
     let x_length = lines.clone().into_iter().next().unwrap().len();
     let y_length = lines.len();
-    let mut grid = ndarray::Array2::<Pipe>::default((x_length, y_length));
+    let mut grid = ndarray::Array2::<Pipe>::default((y_length, x_length));
     let mut start: (usize, usize) = (0, 0);
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
         for (j, col) in row.iter_mut().enumerate() {
-            let pipe = Pipe::from(lines.get(i).unwrap().chars().nth(j).unwrap());
+            let c = lines.get(i).unwrap().chars().nth(j).unwrap();
+            let pipe = Pipe::from(c);
             *col = pipe.clone();
             if &pipe.pipe_kind == &Starting {
                 start = (j, i);
@@ -23,6 +34,7 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut steps = 0;
     let mut current_pos = (start.1, start.0);
     let start = current_pos;
+    let mut positions = vec![];
 
     loop {
         let pos = grid.get(current_pos).unwrap();
@@ -42,11 +54,22 @@ pub fn part_one(input: &str) -> Option<u32> {
             }
         }
         steps += 1;
+        positions.push((current_pos.0, current_pos.1));
         if current_pos == start {
             break;
         }
     }
-    Some(steps / 2)
+    return (steps, positions);
+}
+
+fn shoelace(positions: Vec<(usize, usize)>) -> i32 {
+    let mut a = 0i32;
+    let mut b = 0i32;
+    for x in 0..positions.len() {
+        a += (positions[x].0 * positions[(x + 1) % positions.len()].1) as i32;
+        b += (positions[x].1 * positions[(x + 1) % positions.len()].0) as i32;
+    }
+    return (a - b).abs() / 2 - positions.len() as i32 / 2 + 1;
 }
 
 impl Pipe {
@@ -106,68 +129,6 @@ impl Pipe {
     }
 }
 
-fn solve(input: &str) -> (i32, Vec<(usize, usize)>) {
-    let lines = input.lines().collect::<Vec<_>>();
-    let x_length = lines.clone().into_iter().next().unwrap().len();
-    let y_length = lines.len();
-    let mut grid = ndarray::Array2::<Pipe>::default((y_length, x_length));
-    let mut start: (usize, usize) = (0, 0);
-    for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
-        for (j, col) in row.iter_mut().enumerate() {
-            let c = lines.get(i).unwrap().chars().nth(j).unwrap();
-            let pipe = Pipe::from(c);
-            *col = pipe.clone();
-            if &pipe.pipe_kind == &Starting {
-                start = (j, i);
-            }
-        }
-    }
-    let mut dir_came_in_on = South;
-    let mut steps = 0;
-    let mut current_pos = (start.1, start.0);
-    let start = current_pos;
-    let mut positions = vec![];
-
-    loop {
-        let pos = grid.get(current_pos).unwrap();
-        dir_came_in_on = pos.get_next(dir_came_in_on).unwrap();
-        match dir_came_in_on {
-            North => {
-                current_pos.0 += 1;
-            }
-            South => {
-                current_pos.0 -= 1;
-            }
-            East => {
-                current_pos.1 -= 1;
-            }
-            West => {
-                current_pos.1 += 1;
-            }
-        }
-        steps += 1;
-        positions.push((current_pos.0, current_pos.1));
-        if current_pos == start {
-            break;
-        }
-    }
-    return (steps, positions);
-}
-
-pub fn part_two(input: &str) -> Option<i32> {
-    Some(shoelace(positions))
-}
-
-fn shoelace(positions: Vec<(usize, usize)>) -> i32 {
-    let mut a = 0i32;
-    let mut b = 0i32;
-    for x in 0..positions.len() {
-        a += (positions[x].0 * positions[(x + 1) % positions.len()].1) as i32;
-        b += (positions[x].1 * positions[(x + 1) % positions.len()].0) as i32;
-    }
-    return (a - b).abs() / 2 - positions.len() as i32 / 2 + 1;
-}
-
 #[derive(Debug, Clone, PartialEq)]
 struct Pipe {
     pipe_kind: PipeKind,
@@ -201,23 +162,8 @@ enum Dir {
     West,
 }
 
-impl PipeKind {
-    fn dirs(&self) -> Option<(Dir, Dir)> {
-        return match self {
-            Vertical => Some((North, South)),
-            Horizontal => Some((East, West)),
-            L => Some((North, East)),
-            J => Some((North, West)),
-            Seven => Some((South, West)),
-            F => Some((South, East)),
-            Ground => None,
-            Starting => Some((South, East)),
-        };
-    }
-}
-
 impl Display for PipeKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             Vertical => '|',
             Horizontal => '-',
@@ -298,6 +244,6 @@ LJ...",
 .L--J.L--J.
 ...........",
         );
-        assert_eq!(result, None);
+        assert_eq!(result, Some(4));
     }
 }
