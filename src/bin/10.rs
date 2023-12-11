@@ -16,7 +16,7 @@ pub fn part_two(input: &str) -> Option<i32> {
 
 fn solve(input: &str) -> (i32, Vec<(usize, usize)>) {
     let lines = input.lines().collect::<Vec<_>>();
-    let x_length = lines.clone().into_iter().next().unwrap().len();
+    let x_length = lines.first().unwrap().len();
     let y_length = lines.len();
     let mut grid = ndarray::Array2::<Pipe>::default((y_length, x_length));
     let mut start: (usize, usize) = (0, 0);
@@ -24,10 +24,10 @@ fn solve(input: &str) -> (i32, Vec<(usize, usize)>) {
         for (j, col) in row.iter_mut().enumerate() {
             let c = lines.get(i).unwrap().chars().nth(j).unwrap();
             let pipe = Pipe::from(c);
-            *col = pipe.clone();
             if &pipe.pipe_kind == &Starting {
                 start = (j, i);
             }
+            *col = pipe;
         }
     }
     let mut dir_came_in_on = South;
