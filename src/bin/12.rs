@@ -26,7 +26,7 @@ fn arrangements(pixels_in: Vec<char>, groups: Vec<usize>) -> usize {
         return if groups.len() == 0 { 1 } else { 0 };
     } else if pixels[0] == '.' {
         pixels.remove(0);
-        return arrangements(pixels, groups.clone());
+        return arrangements(pixels, groups);
     } else if pixels[0] == '?' {
         let p = pixels.iter().map(|s| s.to_string()).join("");
         return arrangements(p.replacen("?", ".", 1).chars().collect(), groups.clone())
@@ -47,26 +47,13 @@ fn arrangements(pixels_in: Vec<char>, groups: Vec<usize>) -> usize {
             if pixels.len() < groups[0] + 1 || pixels[groups[0]] == '#' {
                 return 0;
             }
-            return arrangements(pixels[groups[0] + 1..].to_vec(), groups[1..].to_vec());
+            return arrangements(pixels[(groups[0] + 1)..].to_vec(), groups[1..].to_vec());
         } else {
             return arrangements(pixels[groups[0]..].to_vec(), groups[1..].to_vec());
         }
     }
-    panic!("fail bro");
-    0
+    panic!("Parsing issue");
 }
-
-fn is_valid(input: &str, pattern: Vec<usize>) -> bool {
-    let mut i = 0;
-    for l in input.split(".").into_iter() {
-        if l.len() != *pattern.get(i).unwrap_or(&0usize) {
-            return false;
-        }
-        i += 1;
-    }
-    return true;
-}
-
 pub fn part_two(input: &str) -> Option<usize> {
     let lines = input.lines();
     let mut sum = 0;
