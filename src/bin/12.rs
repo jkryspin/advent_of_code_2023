@@ -1,7 +1,4 @@
 use cached::proc_macro::cached;
-use itertools::Itertools;
-use rayon::iter::IntoParallelRefIterator;
-use rayon::iter::ParallelIterator;
 
 advent_of_code::solution!(12);
 
@@ -9,11 +6,12 @@ pub fn part_one(input: &str) -> Option<usize> {
     let lines = input.lines().collect::<Vec<_>>();
     Some(
         lines
-            .par_iter()
+            .iter()
             .map(|line| {
                 let (row, pattern) = line.split_once(" ").unwrap();
+                let r = row.to_string() + ".";
                 let x = arrangements(
-                    row.chars().collect(),
+                    r.chars().collect(),
                     pattern
                         .split(",")
                         .map(|s| s.parse::<usize>().unwrap())
@@ -26,38 +24,45 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 #[cached]
-fn arrangements(pixels_in: Vec<char>, groups: Vec<usize>) -> usize {
-    let mut pixels = pixels_in.clone();
-    if pixels.len() == 0 {
-        return if groups.len() == 0 { 1 } else { 0 };
-    } else if pixels[0] == '.' {
-        pixels.remove(0);
-        return arrangements(pixels, groups);
-    } else if pixels[0] == '?' {
-        let p = pixels.iter().map(|s| s.to_string()).join("");
-        return arrangements(p.replacen("?", ".", 1).chars().collect(), groups.clone())
-            + arrangements(p.replacen("?", "#", 1).chars().collect(), groups.clone());
-    } else if pixels[0] == '#' {
+fn arrangements(chars: Vec<char>, groups: Vec<usize>) -> usize {
+    let cs = chars.clone();
+    if cs.len() == 0 {
+        return if groups.len() > 0 { 0 } else { 1 };
+    }
+    if cs[0] == '.' {
+        return arrangements(cs[1..].to_vec(), groups);
+    }
+    if cs[0] == '?' {
+        let mut one = cs.clone();
+        one[0] = '.';
+        let mut two = cs.clone();
+        two[0] = '#';
+        return arrangements(one, groups.clone()) + arrangements(two, groups.clone());
+    }
+
+    if cs[0] == '#' {
         if groups.len() == 0 {
             return 0;
         }
-        if pixels.len() < groups[0] {
+        if cs.len() < groups[0] {
             return 0;
         }
         for c in 0..groups[0] {
-            if pixels[c] == '.' {
+            if cs[c] == '.' {
                 return 0;
             }
         }
+        // Group doesn't end in #
+        if cs[groups[0]] == '#' {
+            return 0;
+        }
+        // are there more groups to process
         if groups.len() > 1 {
-            if pixels.len() < groups[0] + 1 || pixels[groups[0]] == '#' {
-                return 0;
-            }
-            return arrangements(pixels[(groups[0] + 1)..].to_vec(), groups[1..].to_vec());
-        } else {
-            return arrangements(pixels[groups[0]..].to_vec(), groups[1..].to_vec());
+            return arrangements(cs[(groups[0] + 1)..].to_vec(), groups[1..].to_vec());
         }
+        return arrangements(cs[groups[0]..].to_vec(), groups[1..].to_vec());
     }
+
     panic!("Parsing issue");
 }
 pub fn part_two(input: &str) -> Option<usize> {
@@ -68,6 +73,7 @@ pub fn part_two(input: &str) -> Option<usize> {
         let mut r = (row.to_string() + "?").repeat(5);
         let mut p = (pattern.to_string() + ",").repeat(5);
         r = r[0..r.len() - 1].to_string();
+        r = r + ".";
         p = p[0..p.len() - 1].to_string();
         let x = arrangements(
             r.chars().collect(),
