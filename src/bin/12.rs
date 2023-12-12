@@ -57,10 +57,12 @@ fn arrangements(chars: Vec<char>, groups: Vec<usize>) -> usize {
             return 0;
         }
         // are there more groups to process
-        if groups.len() > 1 {
+        if groups.len() >= 1 {
+            // Move Forward
             return arrangements(cs[(groups[0] + 1)..].to_vec(), groups[1..].to_vec());
         }
-        return arrangements(cs[groups[0]..].to_vec(), groups[1..].to_vec());
+        // Match found!
+        return 1;
     }
 
     panic!("Parsing issue");
