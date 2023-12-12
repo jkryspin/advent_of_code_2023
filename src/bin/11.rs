@@ -89,13 +89,8 @@ mod tests {
     fn test_part_one_a() {
         let row_has_g = HashSet::<usize>::from_iter(vec![2, 5, 4, 6, 1, 9, 8, 0]);
         let col_has_g = HashSet::<usize>::from_iter(vec![3, 0, 6, 1, 9, 7, 4]);
-
-        // let d = distance((1, 5), (4, 9), &row_has_g, &col_has_g);
-        // assert_eq!(d, 9);
-
         let d = distance(&(3, 0), &(7, 8), &row_has_g, &col_has_g, 1);
         assert_eq!(d, 15);
-        // assert_eq!(result, None);
     }
 
     #[test]
