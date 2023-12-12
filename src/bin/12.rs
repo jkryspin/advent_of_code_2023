@@ -1,22 +1,28 @@
 use cached::proc_macro::cached;
 use itertools::Itertools;
+use rayon::iter::IntoParallelRefIterator;
+use rayon::iter::ParallelIterator;
+
 advent_of_code::solution!(12);
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let lines = input.lines();
-    let mut sum = 0;
-    lines.for_each(|line| {
-        let (row, pattern) = line.split_once(" ").unwrap();
-        let x = arrangements(
-            row.chars().collect(),
-            pattern
-                .split(",")
-                .map(|s| s.parse::<usize>().unwrap())
-                .collect(),
-        );
-        sum += x;
-    });
-    Some(sum)
+    let lines = input.lines().collect::<Vec<_>>();
+    Some(
+        lines
+            .par_iter()
+            .map(|line| {
+                let (row, pattern) = line.split_once(" ").unwrap();
+                let x = arrangements(
+                    row.chars().collect(),
+                    pattern
+                        .split(",")
+                        .map(|s| s.parse::<usize>().unwrap())
+                        .collect(),
+                );
+                x
+            })
+            .sum::<usize>(),
+    )
 }
 
 #[cached]
