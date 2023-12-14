@@ -1,9 +1,6 @@
 use crate::Dir::{East, North, South, West};
 use ndarray::{Array2, Axis};
-use std::collections::HashSet;
 use std::fmt;
-use std::ops::Index;
-use std::panic::panic_any;
 advent_of_code::solution!(14);
 
 pub fn part_one(input: &str) -> Option<usize> {
@@ -100,7 +97,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     let mut seen = Vec::<String>::new();
     let mut ans_map = Vec::<usize>::new();
     let mut steps = 0;
-    let (cycle_start, steps, p) = loop {
+    let (cycle_start, steps) = loop {
         let curr_dir = &dirs[i];
 
         simulate(curr_dir, &mut grid);
@@ -109,11 +106,11 @@ pub fn part_two(input: &str) -> Option<usize> {
             match seen
                 .iter()
                 .enumerate()
-                .find(|(cycle_start, p)| p == &&(curr_dir.to_string() + &grid.stringify()))
+                .find(|(_, p)| p == &&(curr_dir.to_string() + &grid.stringify()))
             {
                 None => {}
                 Some((cycle_start, p)) => {
-                    break (cycle_start, steps, p);
+                    break (cycle_start, steps);
                 }
             }
 
@@ -141,8 +138,8 @@ trait Stringify {
 impl Stringify for Array2<char> {
     fn stringify(&self) -> String {
         let mut s = Vec::<char>::new();
-        for (i, mut row) in self.axis_iter(Axis(0)).enumerate() {
-            for (j, col) in row.iter().enumerate() {
+        for row in self.axis_iter(Axis(0)) {
+            for col in row.iter() {
                 s.push(*col);
             }
         }
