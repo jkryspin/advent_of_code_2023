@@ -31,7 +31,7 @@ impl fmt::Display for Dir {
 fn score(grid: &Array2<char>) -> usize {
     let mut score = 0;
     for (i, row) in grid.axis_iter(Axis(0)).enumerate() {
-        for (j, c) in row.iter().enumerate() {
+        for c in row.iter() {
             if c == &'O' {
                 score += grid.len_of(Axis(0)) - i;
             }
@@ -109,7 +109,7 @@ pub fn part_two(input: &str) -> Option<usize> {
                 .find(|(_, p)| p == &&(curr_dir.to_string() + &grid.stringify()))
             {
                 None => {}
-                Some((cycle_start, p)) => {
+                Some((cycle_start, _)) => {
                     break (cycle_start, steps);
                 }
             }
