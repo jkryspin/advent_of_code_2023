@@ -2,11 +2,13 @@ use crate::Dir::{East, North, South, West};
 use ndarray::{Array2, Axis};
 use std::collections::HashSet;
 use std::fmt;
+use std::ops::Index;
+use std::panic::panic_any;
 advent_of_code::solution!(14);
 
 pub fn part_one(input: &str) -> Option<usize> {
     let lines = input.lines().collect::<Vec<_>>();
-    let mut grid = ndarray::Array2::<char>::default((lines.len(), lines[0].len()));
+    let mut grid = Array2::<char>::default((lines.len(), lines[0].len()));
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
         for (j, col) in row.iter_mut().enumerate() {
             let c = lines.get(i).unwrap().chars().nth(j).unwrap();
@@ -55,19 +57,36 @@ fn simulate(dir: &Dir, grid: &mut Array2<char>) {
             }
         }
     }
+    let diff = match dir {
+        North => (0, -1),
+        South => (0, 1),
+        East => (1, 0),
+        West => (-1, 0),
+    };
+    round_rocks.sort_by(|(ax, ay), (bx, by)| {
+        return match dir {
+            North => ay.cmp(by),
+            South => by.cmp(ay),
+            East => bx.cmp(ax),
+            West => ax.cmp(bx),
+        };
+    });
     round_rocks.iter().for_each(|(x, y)| {
-        let mut curr_y = *y as i32 - 1i32;
-        while grid.get((curr_y as usize, x.clone())).unwrap_or(&'#') == &'.' {
-            curr_y -= 1;
+        let mut curr_y = *y as i32 + diff.1;
+        let mut curr_x = *x as i32 + diff.0;
+        while grid.get((curr_y as usize, curr_x as usize)).unwrap_or(&'#') == &'.' {
+            curr_y += diff.1;
+            curr_x += diff.0;
         }
-        curr_y += 1;
+        curr_y -= diff.1;
+        curr_x -= diff.0;
 
         *grid.get_mut((y.clone(), x.clone())).unwrap() = '.';
-        *grid.get_mut((curr_y as usize, x.clone())).unwrap() = 'O';
+        *grid.get_mut((curr_y as usize, curr_x as usize)).unwrap() = 'O';
     });
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_two(input: &str) -> Option<usize> {
     let lines = input.lines().collect::<Vec<_>>();
     let mut grid = ndarray::Array2::<char>::default((lines.len(), lines[0].len()));
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
@@ -78,25 +97,57 @@ pub fn part_two(input: &str) -> Option<u32> {
     }
     let dirs = [North, West, South, East];
     let mut i = 0;
-    let seen = HashSet::<String>::new();
+    let mut seen = Vec::<String>::new();
+    let mut ans_map = Vec::<usize>::new();
     let mut steps = 0;
-    loop {
+    let (cycle_start, steps, p) = loop {
         let curr_dir = &dirs[i];
-        curr_dir.to_string();
-        if seen.contains((curr_dir.to_string() + &grid.to_string()).as_str()) {
-            dbg!(curr_dir, steps);
-            panic!("found cycle!");
-        }
 
         simulate(curr_dir, &mut grid);
+        if curr_dir == &East {
+            ans_map.push(score(&grid));
+            match seen
+                .iter()
+                .enumerate()
+                .find(|(cycle_start, p)| p == &&(curr_dir.to_string() + &grid.stringify()))
+            {
+                None => {}
+                Some((cycle_start, p)) => {
+                    break (cycle_start, steps, p);
+                }
+            }
+
+            seen.push(curr_dir.to_string() + &grid.stringify());
+            steps += 1;
+        }
+
         i += 1;
         if i > 3 {
             i = 0;
         }
-        steps += 1;
+    };
+    let cycle_length = steps - cycle_start;
+    let target = 1000000000usize;
+
+    let target_pos_in_cycle = (target - cycle_start) % cycle_length;
+    let answer_pos = cycle_start + target_pos_in_cycle - 1;
+
+    Some(ans_map[answer_pos])
+}
+
+trait Stringify {
+    fn stringify(&self) -> String;
+}
+impl Stringify for Array2<char> {
+    fn stringify(&self) -> String {
+        let mut s = Vec::<char>::new();
+        for (i, mut row) in self.axis_iter(Axis(0)).enumerate() {
+            for (j, col) in row.iter().enumerate() {
+                s.push(*col);
+            }
+        }
+        return s.iter().collect();
     }
-    Some(score(&grid));
-    None
 }
 
 #[cfg(test)]
@@ -112,6 +163,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(64));
     }
 }
