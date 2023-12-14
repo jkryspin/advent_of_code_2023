@@ -10,7 +10,7 @@ pub fn part_one(input: &str) -> Option<usize> {
             return if let Some(x) = get_vertical_mirror_position(&lines, 0) {
                 x + 1
             } else {
-                (get_mirror_pos_y_one_off(&lines, 0).unwrap() + 1) * 100
+                (get_horizontal_mirror_position(&lines, 0).unwrap() + 1) * 100
             };
         })
         .collect::<Vec<_>>();
@@ -28,7 +28,7 @@ pub fn part_two(input: &str) -> Option<usize> {
             return if let Some(x) = get_vertical_mirror_position(&lines, 1) {
                 x + 1
             } else {
-                (get_mirror_pos_y_one_off(&lines, 1).unwrap() + 1) * 100
+                (get_horizontal_mirror_position(&lines, 1).unwrap() + 1) * 100
             };
         })
         .collect::<Vec<_>>();
@@ -36,7 +36,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     Some(mirrors.iter().sum())
 }
 
-fn get_mirror_pos_y_one_off(lines: &Vec<&str>, expected_wrong_count: usize) -> Option<usize> {
+fn get_horizontal_mirror_position(lines: &Vec<&str>, expected_wrong_count: usize) -> Option<usize> {
     let horizontal_mirrors = 0..lines.len() - 1;
     for row in horizontal_mirrors {
         let mut count_wrong = 0;
