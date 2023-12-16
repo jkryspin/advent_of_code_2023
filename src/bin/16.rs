@@ -5,11 +5,43 @@ advent_of_code::solution!(16);
 
 pub fn part_one(input: &str) -> Option<usize> {
     let grid = create_grid(input.lines().collect());
-    println!("{}", grid);
+    Some(amount_energized(&grid, 0, 0, West))
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    let grid = create_grid(input.lines().collect());
+    let max_x = input.lines().next().unwrap().len();
+    let max_y = input.lines().collect::<Vec<_>>().len();
+    let max1 = (0..max_y)
+        .map(|y| {
+            amount_energized(&grid, 0, y as i32, West).max(amount_energized(
+                &grid,
+                (max_x - 1) as i32,
+                y as i32,
+                East,
+            ))
+        })
+        .max()
+        .unwrap();
+    let max2 = (0..max_x)
+        .map(|x| {
+            amount_energized(&grid, x as i32, 0, North).max(amount_energized(
+                &grid,
+                x as i32,
+                (max_y - 1) as i32,
+                South,
+            ))
+        })
+        .max()
+        .unwrap();
+    Some(max1.max(max2))
+}
+
+fn amount_energized(grid: &Array2<char>, x: i32, y: i32, d: EnteredFrom) -> usize {
     let mut seen_count = HashMap::<(i32, i32), usize>::new();
     let mut queue = VecDeque::<(i32, i32, EnteredFrom)>::new();
     let mut already_hit = HashSet::<(i32, i32, EnteredFrom)>::new();
-    queue.push_back((0, 0, West));
+    queue.push_back((x, y, d));
     while let Some((x, y, dir)) = queue.pop_back() {
         if y < 0
             || x < 0
@@ -30,17 +62,17 @@ pub fn part_one(input: &str) -> Option<usize> {
             match c {
                 '.' => {
                     queue.push_back(match dir {
-                        EnteredFrom::North => (x, y + 1, dir),
-                        EnteredFrom::South => (x, y - 1, dir),
-                        EnteredFrom::East => (x - 1, y, dir),
-                        EnteredFrom::West => (x + 1, y, dir),
+                        North => (x, y + 1, dir),
+                        South => (x, y - 1, dir),
+                        East => (x - 1, y, dir),
+                        West => (x + 1, y, dir),
                     });
                 }
                 '\\' => queue.push_back(match dir {
-                    EnteredFrom::North => (x + 1, y, West),
-                    EnteredFrom::South => (x - 1, y, East),
-                    EnteredFrom::East => (x, y - 1, South),
-                    EnteredFrom::West => (x, y + 1, North),
+                    North => (x + 1, y, West),
+                    South => (x - 1, y, East),
+                    East => (x, y - 1, South),
+                    West => (x, y + 1, North),
                 }),
                 '/' => {
                     queue.push_back(match dir {
@@ -86,8 +118,7 @@ pub fn part_one(input: &str) -> Option<usize> {
             }
         }
     }
-
-    Some(seen_count.len())
+    seen_count.len()
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
@@ -108,9 +139,6 @@ fn create_grid(lines: Vec<&str>) -> Array2<char> {
     }
     return grid;
 }
-pub fn part_two(input: &str) -> Option<u32> {
-    None
-}
 
 #[cfg(test)]
 mod tests {
@@ -125,6 +153,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(51));
     }
 }
