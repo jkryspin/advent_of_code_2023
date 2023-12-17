@@ -1,6 +1,6 @@
 use crate::EnteredFrom::{East, North, South, West};
 use advent_of_code::GridCreator;
-use ndarray::{Array2, Axis};
+use ndarray::Array2;
 use std::collections::{HashMap, HashSet, VecDeque};
 advent_of_code::solution!(16);
 
@@ -129,17 +129,6 @@ enum EnteredFrom {
     South,
     East,
     West,
-}
-
-fn create_grid(lines: Vec<&str>) -> Array2<char> {
-    let mut grid = Array2::<char>::default((lines.len(), lines[0].len()));
-    for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
-        for (j, col) in row.iter_mut().enumerate() {
-            let c = lines.get(i).unwrap().chars().nth(j).unwrap();
-            *col = c;
-        }
-    }
-    return grid;
 }
 
 #[cfg(test)]
