@@ -1,15 +1,16 @@
 use crate::EnteredFrom::{East, North, South, West};
+use advent_of_code::GridCreator;
 use ndarray::{Array2, Axis};
 use std::collections::{HashMap, HashSet, VecDeque};
 advent_of_code::solution!(16);
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let grid = create_grid(input.lines().collect());
+    let grid = input.create_grid();
     Some(amount_energized(&grid, 0, 0, West))
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let grid = create_grid(input.lines().collect());
+    let grid = input.create_grid();
     let max_x = input.lines().next().unwrap().len();
     let max_y = input.lines().collect::<Vec<_>>().len();
     let max1 = (0..max_y)
@@ -38,9 +39,10 @@ pub fn part_two(input: &str) -> Option<usize> {
 }
 
 fn amount_energized(grid: &Array2<char>, x: i32, y: i32, d: EnteredFrom) -> usize {
-    let mut seen_count = HashMap::<(i32, i32), usize>::new();
-    let mut queue = VecDeque::<(i32, i32, EnteredFrom)>::new();
-    let mut already_hit = HashSet::<(i32, i32, EnteredFrom)>::new();
+    let size = grid.rows().into_iter().len() * grid.columns().into_iter().len();
+    let mut seen_count = HashMap::<(i32, i32), usize>::with_capacity(size);
+    let mut queue = VecDeque::<(i32, i32, EnteredFrom)>::with_capacity(size);
+    let mut already_hit = HashSet::<(i32, i32, EnteredFrom)>::with_capacity(size);
     queue.push_back((x, y, d));
     while let Some((x, y, dir)) = queue.pop_back() {
         if y < 0
@@ -130,7 +132,7 @@ enum EnteredFrom {
 }
 
 fn create_grid(lines: Vec<&str>) -> Array2<char> {
-    let mut grid = ndarray::Array2::<char>::default((lines.len(), lines[0].len()));
+    let mut grid = Array2::<char>::default((lines.len(), lines[0].len()));
     for (i, mut row) in grid.axis_iter_mut(Axis(0)).enumerate() {
         for (j, col) in row.iter_mut().enumerate() {
             let c = lines.get(i).unwrap().chars().nth(j).unwrap();
