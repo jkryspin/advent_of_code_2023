@@ -11,6 +11,7 @@ impl GridCreator<char> for &str {
     fn create_grid(&self) -> Array2<char> {
         self.lines().collect::<Vec<_>>().create_grid()
     }
+
 }
 
 impl GridCreator<char> for Vec<&str> {
