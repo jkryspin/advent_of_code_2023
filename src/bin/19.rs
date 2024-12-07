@@ -1,45 +1,35 @@
-use std::ops::{Range, RangeInclusive};
+use std::ops::RangeInclusive;
 
 advent_of_code::solution!(19);
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let (rules, xmases) = input.split_once("\n\n").unwrap();
-    let rules = rules.lines().map(|l| Rule::from(l)).collect::<Vec<_>>();
-    let xmases = xmases.lines().map(|l| xmas::from(l)).collect::<Vec<_>>();
+    let (rules, xmases) = input.split_once("\n\n")?;
+    let rules = rules.lines().map(Rule::from).collect::<Vec<_>>();
+    let xmases = xmases.lines().map(xmas::from).collect::<Vec<_>>();
 
-    let mut sum = 0;
-    xmases.iter().for_each(|xmas| {
-        if simulate(&rules, xmas) {
-            sum += xmas.get_score();
-        } else {
-            println!("No match: {:?}", xmas);
-        }
-    });
+    let sum: u32 = xmases
+        .iter()
+        .filter(|xmas| simulate(&rules, xmas))
+        .map(|xmas| xmas.get_score())
+        .sum();
 
     Some(sum as usize)
 }
 
 fn simulate(rules: &[Rule], xmas: &xmas) -> bool {
     let mut input = "in".to_string();
-    let mut history = vec![];
-    let mut rules_applied = vec![];
-    'l: loop {
-        history.push(input.clone());
-        for r in rules.iter() {
-            let result = rule_matches(r, xmas, &input);
-            if let Some(output) = result {
-                rules_applied.push(r);
-                input = output;
-                if input == "A" {
-                    return true;
-                } else if input == "R" {
-                    println!("Rejected: {:?}", history);
-                    return false;
-                }
-                continue 'l;
+
+    loop {
+        if let Some(output) = rules.iter().find_map(|r| rule_matches(r, xmas, &input)) {
+            input = output;
+            if input == "A" {
+                return true;
+            } else if input == "R" {
+                return false;
             }
+        } else {
+            unreachable!("No rule found for input: {}", input);
         }
-        unreachable!("No rule found for input: {}", input);
     }
 }
 
@@ -47,7 +37,7 @@ fn rule_matches(rule: &Rule, xmas: &xmas, input: &str) -> Option<String> {
     if rule.input != input {
         return None;
     }
-    for rule_option in rule.rule_options.iter() {
+    for rule_option in &rule.rule_options {
         let found = match rule_option.xmas {
             'x' => {
                 rule_option.greater_than == (xmas.x > rule_option.value)
@@ -88,6 +78,7 @@ impl xmas {
         self.x + self.m + self.a + self.s
     }
 }
+
 impl From<&str> for xmas {
     fn from(value: &str) -> Self {
         let value = value.trim_matches(|c| c == '{' || c == '}');
@@ -97,7 +88,6 @@ impl From<&str> for xmas {
         let mut s = None;
 
         for part in value.split(',') {
-            // println!("{}", part);
             let (key, val) = part.split_once('=').unwrap();
             match key {
                 "x" => x = Some(val.parse().unwrap()),
@@ -124,44 +114,36 @@ struct Rule {
     rule_options: Vec<RuleOption>,
 }
 
-// impl from string
 impl From<&str> for Rule {
     fn from(value: &str) -> Self {
         let (input, rest) = value.split_once("{").unwrap();
-        let options = rest.split(",").collect::<Vec<&str>>();
-        let mut iter = options.iter().rev();
-        let catch_all = iter.next().unwrap().trim_matches(|c| c == '{' || c == '}');
-        assert!(iter.len() > 0);
-        let rules = iter
-            .rev()
+        let options = rest.split(',').collect::<Vec<&str>>();
+        let catch_all = options
+            .last()
+            .unwrap()
+            .trim_matches(|c| c == '{' || c == '}');
+        let rules = options[..options.len() - 1]
+            .iter()
             .map(|s| {
-                let s_clone = s.clone();
                 let (xmas, value) = s.split_once(&['<', '>']).unwrap();
-                let (value, result) = value.split_once(":").unwrap();
-                let result = result.trim_end_matches('}');
-                assert_eq!(xmas.len(), 1);
-                assert!(result.len() > 0);
-                println!("{}", s_clone);
+                let (value, result) = value.split_once(':').unwrap();
                 RuleOption {
                     value: value.parse().unwrap(),
-                    result: result.to_string(),
+                    result: result.trim_end_matches('}').to_string(),
                     xmas: xmas.chars().next().unwrap(),
-                    greater_than: s_clone.contains(">"),
+                    greater_than: s.contains('>'),
                 }
             })
-            .collect::<Vec<_>>();
-        // print all rules
-        // println!("{} -> {:?}", input, rules);
-
-        assert!(input.len() <= 3 && input.len() > 1);
+            .collect();
 
         Self {
-            rule_options: rules,
             input: input.to_string(),
             last: catch_all.to_string(),
+            rule_options: rules,
         }
     }
 }
+
 #[derive(Debug)]
 struct RuleOption {
     value: u32,
@@ -171,13 +153,11 @@ struct RuleOption {
 }
 
 pub fn part_two(input: &str) -> Option<u128> {
-    let (rules, _) = input.split_once("\n\n").unwrap();
-    let rules = rules.lines().map(|l| Rule::from(l)).collect::<Vec<_>>();
-
-    let input = "in".to_string();
+    let (rules, _) = input.split_once("\n\n")?;
+    let rules = rules.lines().map(Rule::from).collect::<Vec<_>>();
 
     Some(simulate_two(
-        input,
+        "in".to_string(),
         &rules,
         xmas_range {
             x: 1..=4000,
@@ -203,7 +183,7 @@ fn simulate_two(input: String, rules: &[Rule], mut xmas_range: xmas_range) -> u1
 
     let mut sum = 0;
     let mut range_left = xmas_range.clone();
-    for r in rule.rule_options.iter() {
+    for r in &rule.rule_options {
         let mut good_range = range_left.clone();
 
         match r.xmas {
@@ -264,17 +244,12 @@ struct xmas_range {
 
 impl xmas_range {
     fn get_combinations_count(&self) -> u128 {
-        // get length of each range
-        println!("{:?}", self);
-        let x = self.x.end() - (*self.x.start()) + 1;
-        let m = self.m.end() - (*self.m.start()) + 1;
-        let a = self.a.end() - (*self.a.start()) + 1;
-        let s = self.s.end() - (*self.s.start()) + 1;
+        let x = self.x.end() - self.x.start() + 1;
+        let m = self.m.end() - self.m.start() + 1;
+        let a = self.a.end() - self.a.start() + 1;
+        let s = self.s.end() - self.s.start() + 1;
 
-        let ans = x as u128 * m as u128 * a as u128 * s as u128;
-        println!("{} * {} * {} * {} = {}", x, m, a, s, ans);
-
-        ans
+        (x as u128) * (m as u128) * (a as u128) * (s as u128)
     }
 }
 
@@ -300,9 +275,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        // print how far off result is from 167409079868000
-        println!("{}", result.unwrap() as i128 - 167409079868000i128);
-
         assert_eq!(result, Some(167409079868000));
     }
 }
