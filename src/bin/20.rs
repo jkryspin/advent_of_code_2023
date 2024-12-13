@@ -1,17 +1,34 @@
 use std::cmp::PartialEq;
 use std::collections::{HashMap, VecDeque};
-use std::ops::{Deref, DerefMut};
 
 advent_of_code::solution!(20);
 
 pub fn part_one(input: &str) -> Option<u32> {
     let mut system = System::new(input);
+    // find source of all conjuctions
+    let (mut conjuctions, rest): (Vec<_>, Vec<_>) = system.modules.iter_mut().partition(|m| {
+        return matches!(m.module_type, ModuleType::Conjunction { .. });
+    });
+    // for each conjuction, set all inputs on the conjuction to low
+    for con in conjuctions.iter_mut() {
+        match &mut con.module_type {
+            ModuleType::Conjunction { last_pulse_by_name } => {
+                for module in rest
+                    .iter()
+                    .filter(|m| m.outputs.contains(&con.name) && m.name != "output")
+                {
+                    last_pulse_by_name.insert(module.name.clone(), Pulse::Low);
+                }
+            }
+            _ => unreachable!(),
+        }
+    }
 
-    for _ in 0..4 {
+    for _ in 0..1000 {
         system.simulate();
         // print low and high pulses sent
-        println!("Low pulses sent: {}", system.low_pulses_sent);
-        println!("High pulses sent: {}", system.high_pulses_sent);
+        // println!("Low pulses sent: {}", system.low_pulses_sent);
+        // println!("High pulses sent: {}", system.high_pulses_sent);
     }
     // print pulses sent
 
@@ -52,8 +69,8 @@ impl System {
         }
     }
 
-    fn get_module_mut(&mut self, name: &str) -> &mut Module {
-        self.modules.iter_mut().find(|m| m.name == name).unwrap()
+    fn get_module_mut(&mut self, name: &str) -> Option<&mut Module> {
+        self.modules.iter_mut().find(|m| m.name == name)
     }
 
     fn get_module(&self, name: &str) -> Module {
@@ -69,44 +86,53 @@ impl System {
 
     fn pop_pulse(&mut self, name: &str) -> Option<Wire> {
         let mut module = self.get_module_mut(name);
-        if module.queue.is_empty() {
-            return None;
+        match module {
+            None => None,
+            Some(m) => {
+                if m.queue.is_empty() {
+                    return None;
+                }
+                let wire = m.queue.pop_back().unwrap();
+                Some(wire)
+            }
         }
-        let wire = module.queue.pop_back().unwrap();
-        Some(wire)
     }
     fn send_pulse(&mut self, source: &str, target: &str, pulse: Pulse) {
         let target_module = self.get_module_mut(target);
-        target_module.queue.push_back(Wire {
-            source: source.to_string(),
-            pulse: pulse.clone(),
-        });
+        match target_module {
+            None => {}
+            Some(target_module) => {
+                target_module.queue.push_back(Wire {
+                    source: source.to_string(),
+                    pulse: pulse.clone(),
+                });
+            }
+        }
+        println!("{} -> {:?} {:?}", source, pulse, target);
+
         if pulse == Pulse::High {
             self.high_pulses_sent += 1;
         } else {
             self.low_pulses_sent += 1;
         }
-        //button -low-> broadcaster
-        println!("{} -{:?}-> {}", source, pulse, target);
     }
     fn simulate(&mut self) {
-        self.send_pulse("button", "broadcaster", Pulse::Low);
+        // self.send_pulse("button", "broadcaster", Pulse::Low);
         let mut curr_name: String = "button".to_string();
-        let mut queue: Vec<(String, String, Pulse)> = Vec::new();
+        let mut queue: VecDeque<(String, String, Pulse)> = VecDeque::new();
+        queue.push_back(("button".to_string(), "broadcaster".to_string(), Pulse::Low));
         loop {
-            queue.drain(..).for_each(|(source, target, pulse)| {
+            if let Some((source, target, pulse)) = queue.pop_front() {
                 self.send_pulse(&source, &target, pulse);
-            });
+            } 
 
-            // curr_name = first module with a queue
             if let Some(module) = self.get_first_module_with_queue() {
                 curr_name = module.name.clone();
             } else {
                 break;
             }
             if let Some(wire) = self.pop_pulse(&curr_name) {
-                // keep popping
-                let curr = self.get_module_mut(&curr_name);
+                let curr = self.get_module_mut(&curr_name).unwrap();
 
                 match &mut curr.module_type {
                     ModuleType::FlipFlop { ref mut on } => {
@@ -114,12 +140,20 @@ impl System {
                             if !*on {
                                 *on = true;
                                 curr.outputs.iter().for_each(|output| {
-                                    queue.push((curr_name.clone(), output.clone(), Pulse::High));
+                                    queue.push_back((
+                                        curr_name.clone(),
+                                        output.clone(),
+                                        Pulse::High,
+                                    ));
                                 });
                             } else {
                                 *on = false;
                                 curr.outputs.iter().for_each(|output| {
-                                    queue.push((curr_name.clone(), output.clone(), Pulse::Low));
+                                    queue.push_back((
+                                        curr_name.clone(),
+                                        output.clone(),
+                                        Pulse::Low,
+                                    ));
                                 });
                             }
                         }
@@ -130,17 +164,28 @@ impl System {
                     ModuleType::Broadcast => {
                         let outputs = curr.outputs.clone();
                         for output in outputs.iter() {
-                            queue.push((curr_name.clone(), output.clone(), wire.pulse.clone()));
+                            queue.push_back((
+                                curr_name.clone(),
+                                output.clone(),
+                                wire.pulse.clone(),
+                            ));
                         }
                     }
                     ModuleType::Conjunction {
                         ref mut last_pulse_by_name,
                     } => {
                         last_pulse_by_name.insert(wire.source, wire.pulse.clone());
-                        if last_pulse_by_name.iter().all(|p| p.1 == &Pulse::High) {
-                            queue.push((curr_name.clone(), curr.outputs[0].clone(), Pulse::Low));
-                        } else {
-                            queue.push((curr_name.clone(), curr.outputs[0].clone(), Pulse::High));
+
+                        let send_low = last_pulse_by_name.iter().all(|p| p.1 == &Pulse::High)
+                            || last_pulse_by_name.len() == 0;
+                        {
+                            for output in curr.outputs.iter() {
+                                queue.push_back((
+                                    curr_name.clone(),
+                                    output.clone(),
+                                    if send_low { Pulse::Low } else { Pulse::High },
+                                ));
+                            }
                         }
                     }
                     ModuleType::Output => {}
@@ -150,7 +195,7 @@ impl System {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 enum ModuleType {
     FlipFlop {
         on: bool,
@@ -240,6 +285,17 @@ mod tests {
 &inv -> a"#,
         );
         assert_eq!(result, Some(32000000));
+    }
+
+    #[test]
+    fn test_part_one_b() {
+        let result = part_one(
+            r#"broadcaster -> a, b
+%a -> con
+%b -> con
+&con -> output"#,
+        );
+        // assert_eq!(result, Some(2));
     }
 
     #[test]
